@@ -1,7 +1,8 @@
 import peewee  # type: ignore
 import datetime
+import config
 
-db = peewee.SqliteDatabase("scraps.db", pragmas={
+db = peewee.SqliteDatabase(config.DATABASE, pragmas={
     'journal_mode': 'wal',
     'foreign_keys': 1,
     'ignore_check_constraints': 0})
