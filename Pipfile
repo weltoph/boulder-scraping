@@ -9,6 +9,3 @@ verify_ssl = true
 beautifulsoup4 = "*"
 peewee = "*"
 pandas = "*"
-
-[requires]
-python_version = "3.8"
