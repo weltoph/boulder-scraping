@@ -1,12 +1,12 @@
 import typing
 import datetime as dt
 import dataclasses
-import matplotlib.pyplot as plt
-import matplotlib.colors as clrs
+import matplotlib.pyplot as plt  # type: ignore
+import matplotlib.colors as clrs  # type: ignore
 
 import model
-import numpy as np
-from peewee import fn
+import numpy as np  # type: ignore
+from peewee import fn  # type: ignore
 
 
 WEEKDAYS = [
@@ -29,14 +29,19 @@ class Weekmap:
                        .where((self.start_day <= model.Scrap.date)
                               & (model.Scrap.date < (self.start_day
                                                      + dt.timedelta(days=7)))))
-        object.__setattr__(self, "values", values)
+        object.__setattr__(self, "_values", values)
+
+    @property
+    def values(self) -> typing.Tuple[model.Scrap]:
+        return self._values  # type: ignore
 
     def day_values(self, offset: int) -> typing.List[
             typing.Tuple[typing.Optional[float], typing.Optional[int]]]:
         day = self.start_day + dt.timedelta(days=offset)
         if day.weekday() in [1,2,3]:
             beginning = 7
-            hours = []
+            hours: typing.List[typing.Tuple[typing.Optional[float],
+                               typing.Optional[int]]] = []
         else:
             beginning = 9
             hours = [(None, None), (None, None)]
@@ -61,24 +66,38 @@ class Weekmap:
                 [[(f if f else -1.0) for f, _ in data[i]]
                  for i in range(len(data))],
                 dtype=float, ndmin=2).transpose()
+        values = np.ma.masked_less(values, 0)
 
-        # TODO: make alpha values a bit more useful
-        alpha = np.array(
-                [[(v/4 if v else 0) for _, v in data[i]]
+        confidence = np.array(
+                [[(1 - v/4 if v else 1) for _, v in data[i]]
                  for i in range(len(data))],
                 dtype=float, ndmin=2).transpose()
 
-        cmap = plt.cm.Greens
-        display_data = clrs.Normalize()(values)
-        display_data = cmap(display_data)
+        display_values = plt.cm.Greens(clrs.Normalize()(values))
+        display_confidence = plt.cm.Reds(clrs.Normalize()(confidence))
 
+        print(display_values)
+        print(display_confidence)
+
+        actual_data = [[None for _ in range(len(xaxis))]
+                       for _ in range(len(yaxis))]
 
         for x in range(len(xaxis)):
             for y in range(len(yaxis)):
-                display_data[y][x][-1] = alpha[y][x]
+                actual_data[y][x] = ((display_values[y][x][0]
+                                        + display_confidence[y][x][0])/2,
+                                     (display_values[y][x][1]
+                                      + display_confidence[y][x][1])/2,
+                                     (display_values[y][x][2]
+                                      + display_confidence[y][x][2])/2)
+                places, tests = data[x][y]
+                if places is None and tests is None:
+                    actual_data[y][x] += (0,)
+                else:
+                    actual_data[y][x] += (1,)
 
         fig, ax = plt.subplots()
-        im = ax.imshow(display_data)
+        im = ax.imshow(actual_data)
 
         ax.set_xticklabels(xaxis)
         ax.set_yticklabels(yaxis)
