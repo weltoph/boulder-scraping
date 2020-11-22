@@ -92,6 +92,7 @@ class Weekmap:
 
         fig, ax = plt.subplots()
         im = ax.imshow(actual_data)
+        ax.set_title(f"Weekmap starting {self.start_day.isoformat()}")
         im.set_cmap(cmap)
 
         ax.set_xticklabels(xaxis)
