@@ -63,41 +63,36 @@ class Weekmap:
         data = [self.day_values(offset) for offset in range(0, 7)]
 
         values = np.array(
-                [[(f if f else -1.0) for f, _ in data[i]]
+                [[(f if f else 0) for f, _ in data[i]]
                  for i in range(len(data))],
                 dtype=float, ndmin=2).transpose()
-        values = np.ma.masked_less(values, 0)
 
         confidence = np.array(
-                [[(1 - v/4 if v else 1) for _, v in data[i]]
+                [[(v if v else 0) for _, v in data[i]]
                  for i in range(len(data))],
                 dtype=float, ndmin=2).transpose()
 
-        display_values = plt.cm.Greens(clrs.Normalize()(values))
-        display_confidence = plt.cm.Reds(clrs.Normalize()(confidence))
+        cmap = clrs.LinearSegmentedColormap.from_list(
+                "traffic_lights",
+                ["red", "yellow", "green"])
 
-        print(display_values)
-        print(display_confidence)
+        display_values = cmap(clrs.Normalize()(values))
+        display_confidence = clrs.Normalize()(confidence)
 
         actual_data = [[None for _ in range(len(xaxis))]
                        for _ in range(len(yaxis))]
 
         for x in range(len(xaxis)):
             for y in range(len(yaxis)):
-                actual_data[y][x] = ((display_values[y][x][0]
-                                        + display_confidence[y][x][0])/2,
-                                     (display_values[y][x][1]
-                                      + display_confidence[y][x][1])/2,
-                                     (display_values[y][x][2]
-                                      + display_confidence[y][x][2])/2)
+                actual_data[y][x] = (display_values[y][x][0],
+                                     display_values[y][x][1],
+                                     display_values[y][x][2],
+                                     display_confidence[y][x])
                 places, tests = data[x][y]
-                if places is None and tests is None:
-                    actual_data[y][x] += (0,)
-                else:
-                    actual_data[y][x] += (1,)
 
         fig, ax = plt.subplots()
         im = ax.imshow(actual_data)
+        im.set_cmap(cmap)
 
         ax.set_xticklabels(xaxis)
         ax.set_yticklabels(yaxis)
@@ -106,12 +101,10 @@ class Weekmap:
 
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
                  rotation_mode="anchor")
-
+        colorbar = plt.colorbar(im)
+        colorbar.set_ticks([120/120, 100/120, 80/120, 60/120, 40/120, 20/120,
+                            0/120])
+        colorbar.set_ticklabels([120, 100, 80, 60, 40, 20, 0])
 
         fig.tight_layout()
-        plt.show()
-
-
-
-day = dt.date(2020, 10, 26)
-Weekmap(day).img
+        return plt
