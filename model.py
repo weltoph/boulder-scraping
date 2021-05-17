@@ -8,15 +8,27 @@ db = peewee.SqliteDatabase(config.DATABASE, pragmas={
     'ignore_check_constraints': 0})
 
 
-class Scrap(peewee.Model):
+class DataPoint(peewee.Model):
     date = peewee.DateTimeField(default=datetime.datetime.now)
-    free_spaces = peewee.IntegerField(null=True)
-    error = peewee.CharField(null=True)
+    place = peewee.CharField()
+    boulder = peewee.IntegerField(null=True)
+    climbing = peewee.IntegerField(null=True)
 
     class Meta:
         database = db
 
 
+class ErrorPoint(peewee.Model):
+    date = peewee.DateTimeField(default=datetime.datetime.now)
+    msg = peewee.CharField()
+
+    class Meta:
+        database = db
+
 def create_tables():
     with db:
-        db.create_tables([Scrap])
+        db.create_tables([DataPoint, ErrorPoint])
+
+
+if __name__ == "__main__":
+    create_tables()
