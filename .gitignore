@@ -5,6 +5,7 @@ scraps.db
 # exclude config values
 config.py
 inenv.sh
+deploy.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
